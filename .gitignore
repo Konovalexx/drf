@@ -1,0 +1,52 @@
+# Python
+*.py[cod]
+__pycache__/
+*.pyo
+*.pyd
+
+# Django
+*.log
+*.sqlite3
+db.sqlite3
+/media
+/staticfiles
+/static
+.env
+
+# VSCode
+.vscode/
+
+# PyCharm
+.idea/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*.so
+
+# Coverage
+.coverage
+coverage.xml
+*.cover
+nosetests.xml
+test_*.xml
+*.log
+
+# MyPy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# VS Code settings
+.vscode/
+
+# Environments
+.env
+.venv/
+venv/
+env/
+env.bak/
+venv.bak/
