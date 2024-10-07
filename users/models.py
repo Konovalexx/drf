@@ -1,6 +1,9 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 
+
+# Импортируем модели с использованием строковых ссылок
+# Это поможет избежать проблем с циклическим импортом
 class UserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
         if not email:
@@ -15,6 +18,7 @@ class UserManager(BaseUserManager):
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
         return self.create_user(email, password, **extra_fields)
+
 
 class User(AbstractBaseUser):
     email = models.EmailField(unique=True, verbose_name="Электронная почта")
@@ -34,3 +38,29 @@ class User(AbstractBaseUser):
 
     def __str__(self):
         return self.email
+
+
+class Payment(models.Model):
+    PAYMENT_METHOD_CHOICES = [
+        ('cash', 'Наличные'),
+        ('transfer', 'Перевод на счет'),
+    ]
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Пользователь")
+    payment_date = models.DateTimeField(verbose_name="Дата оплаты")
+
+    # Используем строковые ссылки для избежания циклического импорта
+    course = models.ForeignKey('courses.Course', on_delete=models.SET_NULL, null=True, blank=True,
+                               verbose_name="Оплаченный курс")
+    lesson = models.ForeignKey('courses.Lesson', on_delete=models.SET_NULL, null=True, blank=True,
+                               verbose_name="Оплаченный урок")
+
+    amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Сумма оплаты")
+    payment_method = models.CharField(max_length=10, choices=PAYMENT_METHOD_CHOICES, verbose_name="Способ оплаты")
+
+    class Meta:
+        verbose_name = "Платеж"
+        verbose_name_plural = "Платежи"
+
+    def __str__(self):
+        return f"Платеж {self.user.email} на сумму {self.amount} ({self.payment_method})"
