@@ -10,7 +10,7 @@ class Course(models.Model):
     class Meta:
         verbose_name = "Курс"
         verbose_name_plural = "Курсы"
-        ordering = ['title']  # Сортировка курсов по названию
+        ordering = ['title']
 
     def __str__(self):
         return self.title
@@ -21,11 +21,12 @@ class Lesson(models.Model):
     preview = models.ImageField(upload_to='lesson_previews/', verbose_name="Превью урока", blank=True, null=True)
     video_url = models.URLField(verbose_name="Ссылка на видео", blank=True)
     course = models.ForeignKey(Course, related_name='lessons', on_delete=models.CASCADE, verbose_name="Курс")
+    user = models.ForeignKey(User, related_name='lessons', on_delete=models.CASCADE, verbose_name="Пользователь", blank=True, null=True)
 
     class Meta:
         verbose_name = "Урок"
         verbose_name_plural = "Уроки"
-        ordering = ['title']  # Сортировка уроков по названию
+        ordering = ['title']
 
     def __str__(self):
         return self.title
