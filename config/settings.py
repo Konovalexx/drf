@@ -111,6 +111,9 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # Default primary key field type
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+
+AUTH_USER_MODEL = 'users.User'  # Указываем кастомную модель пользователя
+
 # Настройки для REST framework
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (

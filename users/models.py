@@ -1,9 +1,9 @@
+from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.db import models
-from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
+from django.contrib.auth.models import BaseUserManager
 
 
-# Импортируем модели с использованием строковых ссылок
-# Это поможет избежать проблем с циклическим импортом
+# User Manager для кастомной модели пользователя
 class UserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
         if not email:
@@ -20,11 +20,16 @@ class UserManager(BaseUserManager):
         return self.create_user(email, password, **extra_fields)
 
 
-class User(AbstractBaseUser):
+# Модель пользователя
+class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(unique=True, verbose_name="Электронная почта")
     phone = models.CharField(max_length=15, verbose_name="Телефон")
     city = models.CharField(max_length=100, verbose_name="Город")
     avatar = models.ImageField(upload_to='avatars/', blank=True, null=True, verbose_name="Аватар")
+
+    is_staff = models.BooleanField(default=False, verbose_name="Статус персонала")
+    is_active = models.BooleanField(default=True, verbose_name="Активен")
+    is_superuser = models.BooleanField(default=False, verbose_name="Суперпользователь")
 
     objects = UserManager()
 
@@ -34,12 +39,13 @@ class User(AbstractBaseUser):
     class Meta:
         verbose_name = "Пользователь"
         verbose_name_plural = "Пользователи"
-        ordering = ['email']  # Сортировка пользователей по электронной почте
+        ordering = ['email']
 
     def __str__(self):
         return self.email
 
 
+# Модель платежей
 class Payment(models.Model):
     PAYMENT_METHOD_CHOICES = [
         ('cash', 'Наличные'),
@@ -49,7 +55,6 @@ class Payment(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Пользователь")
     payment_date = models.DateTimeField(verbose_name="Дата оплаты")
 
-    # Используем строковые ссылки для избежания циклического импорта
     course = models.ForeignKey('courses.Course', on_delete=models.SET_NULL, null=True, blank=True,
                                verbose_name="Оплаченный курс")
     lesson = models.ForeignKey('courses.Lesson', on_delete=models.SET_NULL, null=True, blank=True,
