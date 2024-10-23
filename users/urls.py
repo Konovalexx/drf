@@ -1,6 +1,13 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import UserListCreateView, UserDetailView, PaymentViewSet
+from .views import (
+    UserListCreateView,
+    UserDetailView,
+    PaymentViewSet,
+    CreateProductView,
+    CreatePriceView,
+    CreateCheckoutSessionView,
+)
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 # Создаем роутер для Payments ViewSet
@@ -21,4 +28,9 @@ urlpatterns = [
 
     # Включаем роуты для платежей (payments)
     path('', include(router.urls)),
+
+    # Маршруты для Stripe
+    path('create-product/', CreateProductView.as_view(), name='create-product'),
+    path('create-price/', CreatePriceView.as_view(), name='create-price'),
+    path('create-checkout-session/', CreateCheckoutSessionView.as_view(), name='create-checkout-session'),
 ]

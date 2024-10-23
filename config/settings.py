@@ -29,6 +29,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     'users',
     'courses',
+    'drf_yasg',
     'django_filters',
     "rest_framework",
     "rest_framework_simplejwt",  # Добавляем SimpleJWT
@@ -111,7 +112,6 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # Default primary key field type
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-
 AUTH_USER_MODEL = 'users.User'  # Указываем кастомную модель пользователя
 
 # Настройки для REST framework
@@ -131,3 +131,7 @@ SIMPLE_JWT = {
     'ROTATE_REFRESH_TOKENS': True,  # Обновление refresh-токенов
     'BLACKLIST_AFTER_USE': True,  # Чёрный список токенов после использования
 }
+
+# Настройки Stripe
+STRIPE_TEST_PUBLIC_KEY = os.getenv('STRIPE_TEST_PUBLIC_KEY')  # Загрузка публичного ключа из .env
+STRIPE_TEST_SECRET_KEY = os.getenv('STRIPE_TEST_SECRET_KEY')  # Загрузка секретного ключа из .env
