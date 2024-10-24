@@ -10,11 +10,11 @@ from .views import (
 )
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
-# Создаем роутер для Payments ViewSet
+# Создаем роутер для Payment ViewSet
 router = DefaultRouter()
 router.register(r'payments', PaymentViewSet)
 
-# Определяем URL-паттерны для регистрации, авторизации, обновления токена и CRUD пользователей
+# Определяем URL-паттерны
 urlpatterns = [
     # Регистрация пользователя (ListCreate)
     path('register/', UserListCreateView.as_view(), name='user-list-create'),
@@ -26,7 +26,7 @@ urlpatterns = [
     path('login/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 
-    # Включаем роуты для платежей (payments)
+    # Включаем роуты для платежей
     path('', include(router.urls)),
 
     # Маршруты для Stripe
