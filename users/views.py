@@ -3,8 +3,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from django_filters.rest_framework import DjangoFilterBackend
 from .models import Payment, User
-from .serializers import PaymentSerializer, UserSerializer, ProductSerializer, PriceSerializer, \
-    CheckoutSessionSerializer
+from .serializers import PaymentSerializer, UserSerializer, ProductSerializer, PriceSerializer, CheckoutSessionSerializer
 from .services import create_stripe_product, create_stripe_price, create_stripe_checkout_session
 
 
