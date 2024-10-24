@@ -1,17 +1,11 @@
-import stripe
-from django.conf import settings
-from django.shortcuts import get_object_or_404
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters, generics, viewsets
+from rest_framework import status, filters, viewsets
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
-from .models import User, Payment, Course
-from .serializers import UserSerializer, PaymentSerializer
-
-
-# Настройка Stripe
-stripe.api_key = settings.STRIPE_TEST_SECRET_KEY
-
+from django_filters.rest_framework import DjangoFilterBackend
+from .models import Payment, User
+from .serializers import PaymentSerializer, UserSerializer
+from .services import create_stripe_product, create_stripe_price, create_stripe_checkout_session
+from rest_framework import generics
 
 # Вьюха показа списка пользователей и создания новых пользователей
 class UserListCreateView(generics.ListCreateAPIView):
@@ -35,7 +29,7 @@ class UserDetailView(generics.RetrieveUpdateDestroyAPIView):
     def get_permissions(self):
         # Обновление и удаление разрешено только самому пользователю или админу
         if self.request.method in ['PUT', 'PATCH', 'DELETE']:
-            return [IsAuthenticated(), IsAdminUser()]  # Либо можно сделать проверку на владельца
+            return [IsAuthenticated(), IsAdminUser()]
         return [IsAuthenticated()]
 
 
@@ -55,61 +49,29 @@ class PaymentViewSet(viewsets.ModelViewSet):
             return [IsAuthenticated()]  # Все аутентифицированные пользователи могут видеть
         return [IsAdminUser()]  # Только админ может создавать/удалять платежи
 
+    def perform_create(self, serializer):
+        # Создаем платеж
+        payment = serializer.save()
 
-# Вьюха для создания продукта в Stripe
-class CreateProductView(generics.CreateAPIView):
-    permission_classes = [IsAuthenticated]
+        # Получаем данные для создания продукта и цены в Stripe
+        title = f"Платеж за курс {payment.course} или урок {payment.lesson}"
+        description = f"Оплата за курс {payment.course} или урок {payment.lesson} от пользователя {payment.user.email}"
 
-    def post(self, request, *args, **kwargs):
-        title = request.data.get('title')
-        description = request.data.get('description')
+        # Создаем продукт в Stripe
+        product = create_stripe_product(title, description)
 
-        product = stripe.Product.create(
-            name=title,
-            description=description,
+        # Создаем цену в Stripe (сумма в центах)
+        price = create_stripe_price(product.id, int(payment.amount * 100))
+
+        # Создаем сессию оплаты
+        session = create_stripe_checkout_session(
+            price.id,
+            'https://your-success-url.com',  # URL для успешной оплаты
+            'https://your-cancel-url.com'    # URL для отмены
         )
 
-        return Response(product)
+        # Сохраняем ссылку на сессию в поле платежа
+        payment.stripe_session_url = session.url
+        payment.save()
 
-
-# Вьюха для создания цены в Stripe
-class CreatePriceView(generics.CreateAPIView):
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request, *args, **kwargs):
-        product_id = request.data.get('product_id')
-        amount = request.data.get('amount')  # Укажите сумму в центах
-        currency = request.data.get('currency', 'usd')
-
-        price = stripe.Price.create(
-            unit_amount=amount,
-            currency=currency,
-            product=product_id,
-        )
-
-        return Response(price)
-
-
-# Вьюха для создания сессии оформления заказа в Stripe
-class CreateCheckoutSessionView(generics.CreateAPIView):
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request, *args, **kwargs):
-        course_id = request.data.get('course_id')
-        course = get_object_or_404(Course, id=course_id)
-
-        # Получите цену для курса, здесь вы можете использовать вашу логику
-        price_id = request.data.get('price_id')
-
-        session = stripe.checkout.Session.create(
-            payment_method_types=['card'],
-            line_items=[{
-                'price': price_id,
-                'quantity': 1,
-            }],
-            mode='payment',
-            success_url='https://your-success-url.com',
-            cancel_url='https://your-cancel-url.com',
-        )
-
-        return Response({'id': session.id})
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
