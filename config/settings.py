@@ -33,6 +33,7 @@ INSTALLED_APPS = [
     'django_filters',
     "rest_framework",
     "rest_framework_simplejwt",  # Добавляем SimpleJWT
+    "django_celery_beat",  # Добавляем Celery-beat
 ]
 
 MIDDLEWARE = [
@@ -76,6 +77,11 @@ DATABASES = {
         'PORT': os.getenv('DB_PORT'),
     }
 }
+
+# Настройки Redis и Celery
+CELERY_BROKER_URL = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
+CELERY_RESULT_BACKEND = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [

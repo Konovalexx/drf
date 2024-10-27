@@ -3,10 +3,13 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
+from datetime import timedelta
 from .models import Course, Lesson, Subscription
-from .serializers import CourseSerializer, LessonSerializer, SubscriptionSerializer  # Импортируем SubscriptionSerializer
+from .serializers import CourseSerializer, LessonSerializer, SubscriptionSerializer
 from .permissions import IsModerator, IsOwner
-from .paginators import StandardPageNumberPagination  # Импортируем наш пагинатор
+from .paginators import StandardPageNumberPagination
+from .tasks import send_update_email  # Импортируем задачу для рассылки уведомлений
 
 # Course ViewSet with subscription support
 class CourseViewSet(viewsets.ModelViewSet):
@@ -29,6 +32,22 @@ class CourseViewSet(viewsets.ModelViewSet):
         context['request'] = self.request
         return context
 
+    def update(self, request, *args, **kwargs):
+        """Переопределяем метод update для отправки уведомлений подписчикам"""
+        course = self.get_object()
+        response = super().update(request, *args, **kwargs)
+
+        # Проверяем, прошло ли 4 часа с последнего обновления
+        if timezone.now() - course.last_update > timedelta(hours=4):
+            # Получаем всех подписчиков курса
+            subscribers = course.subscribers.all()
+            for subscriber in subscribers:
+                # Асинхронно отправляем email каждому подписчику
+                send_update_email.delay(subscriber.email, course.name)
+            course.last_update = timezone.now()  # Обновляем поле последнего обновления курса
+            course.save()
+
+        return response
 
 # Lesson List/Create View
 class LessonListCreateView(generics.ListCreateAPIView):
@@ -39,12 +58,11 @@ class LessonListCreateView(generics.ListCreateAPIView):
     def get_permissions(self):
         self.permission_classes = [IsAuthenticated]
         if self.request.method == 'POST':  # Создание урока
-            self.permission_classes = [IsAuthenticated, ~IsModerator]  # Неавторизованные не могут создавать уроки
+            self.permission_classes = [IsAuthenticated, ~IsModerator]
         return [permission() for permission in self.permission_classes]
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
-
 
 # Lesson Detail View (Retrieve, Update, Destroy)
 class LessonDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -58,7 +76,6 @@ class LessonDetailView(generics.RetrieveUpdateDestroyAPIView):
         elif self.request.method == 'DELETE':
             self.permission_classes = [IsAuthenticated, IsOwner]
         return [permission() for permission in self.permission_classes]
-
 
 # Subscription management view
 class SubscriptionView(APIView):
@@ -78,7 +95,6 @@ class SubscriptionView(APIView):
             message = "Подписка добавлена"
 
         return Response({"message": message}, status=status.HTTP_200_OK)
-
 
 # Subscription List View
 class SubscriptionListView(generics.ListAPIView):

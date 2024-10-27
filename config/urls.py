@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django.urls import path, include
+from django.views.generic import RedirectView  # Импортируем RedirectView
 from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
@@ -24,4 +25,5 @@ urlpatterns = [
     path('courses/', include('courses.urls')),  # Включает URL-адреса приложения курсов
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),  # URL для Swagger UI
     path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),  # URL для ReDoc
+    path('', RedirectView.as_view(url='/swagger/', permanent=False)),  # Перенаправление на Swagger
 ]
