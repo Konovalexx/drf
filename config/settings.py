@@ -1,3 +1,4 @@
+# Импортируйте библиотеки
 import os
 from pathlib import Path
 from dotenv import load_dotenv  # Импортируем функцию для загрузки .env
@@ -9,8 +10,6 @@ load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
-
 # Секретный ключ, загруженный из .env
 SECRET_KEY = os.getenv("SECRET_KEY")
 
@@ -82,6 +81,14 @@ DATABASES = {
 CELERY_BROKER_URL = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
 CELERY_RESULT_BACKEND = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+
+# Настройки для периодической задачи проверки и блокировки неактивных пользователей
+CELERY_BEAT_SCHEDULE = {
+    'deactivate-inactive-users': {
+        'task': 'users.tasks.deactivate_inactive_users',
+        'schedule': 86400.0,  # Каждый день (86400 секунд)
+    },
+}
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
